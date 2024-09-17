@@ -76,7 +76,8 @@ def validate_login(login_data: LoginRequest):
             # Check if the password matches
             if bcrypt.checkpw(login_data.password.encode('utf-8'), user['password_hash'].encode('utf-8')):
                 return True
-
+        # If no match found, raise an exception
+        raise HTTPException(status_code=401, detail="Invalid username or password")
 @app.post("/validate_login")
 async def validate_login_endpoint(login_data: LoginRequest):
     validate_login(login_data)
