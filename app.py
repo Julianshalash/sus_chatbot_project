@@ -9,7 +9,7 @@ from backend import process_input
 import bcrypt
 import yaml
 from pydantic import BaseModel
-
+import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -49,6 +49,15 @@ class ConnectionManager:
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
             logging.debug(f"Disconnected: {websocket.client}")
+
+    async def keep_alive(self, websocket: WebSocket):
+        try:
+            while websocket in self.active_connections:
+                await websocket.send_text("")  # Send ping message to keep the connection alive
+                await asyncio.sleep(30)  # Ping every 30 seconds (adjust as needed)
+        except Exception as e:
+            logging.error(f"Keep-alive failed: {e}")
+            self.disconnect(websocket)
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         try:
