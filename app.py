@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware  # Import CORS middleware
 import os
 import openai
 from dotenv import load_dotenv
-from backend import process_input
+from backend import BuildingDataProcessor
 import bcrypt
 import yaml
 from pydantic import BaseModel
@@ -96,13 +96,15 @@ async def validate_login_endpoint(login_data: LoginRequest):
 async def websocket_endpoint(websocket: WebSocket):
     manager = ConnectionManager()
     await manager.connect(websocket)
+    logging.debug("Client connected to WebSocket.")
     try:
         while True:
             data = await websocket.receive_text()
-            logging.debug(f"Received message: {data}")
+            logging.debug(f"Received message from client: {data}")
             # Normalize case for all processing
             normalized_data = data.lower()
-            response = process_input(normalized_data)  # Call the function from backend.py
+            processor = BuildingDataProcessor(normalized_data)  # Call the function from backend.py
+            response = processor.process()  # Assuming 'process' returns the result
             logging.debug(f"Response: {response}")
             await manager.send_personal_message(response, websocket)
     except WebSocketDisconnect:
