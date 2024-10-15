@@ -6,6 +6,7 @@ import os
 import openai
 from dotenv import load_dotenv
 from backend import BuildingDataProcessor
+from U_value import chatbot_calculate
 import bcrypt
 import yaml
 from pydantic import BaseModel
@@ -101,12 +102,19 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             logging.debug(f"Received message from client: {data}")
-            # Normalize case for all processing
-            normalized_data = data.lower()
-            processor = BuildingDataProcessor(normalized_data)  # Call the function from backend.py
-            response = processor.process()  # Assuming 'process' returns the result
-            logging.debug(f"Response: {response}")
-            await manager.send_personal_message(response, websocket)
+            # Intent recognition logic to decide which backend to use
+            if "u value" in data.lower() or "weighted u" in data.lower():  # Handle U-value related inputs
+                logging.debug("Processing U-value related query.")
+                response = chatbot_calculate(data)  # Use the second module to handle U-value calculations
+            else:
+                logging.debug("Processing building data related query.")
+                processor = BuildingDataProcessor(data.lower())  # Normalize case for all processing
+                response = processor.process()  # Use the first module to handle building data
+            if response:  # Ensure that there is something to send back
+               logging.debug(f"Response: {response}")
+               await manager.send_personal_message(response, websocket)
+            else:
+                logging.debug("No response generated.")
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception as e:
