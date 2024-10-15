@@ -85,57 +85,182 @@ class BuildingDataProcessor:
         }
         self.matches = {}
         self.intents = {}
-        self.extract_data()
-        self.detect_intents()
+        self.results = []
+        self.split_and_process_input()
 
-    def extract_data(self):
-        """Extract data based on regex patterns."""
+    def extract_data(self,block):
+        """Extract data from a given block of text."""
+        matches = {}
         for key, pattern in self.patterns.items():
-            match = re.search(pattern, self.input_text, re.IGNORECASE)
+            match = re.search(pattern, block, re.IGNORECASE)
             if match:
-                self.matches[key] = match.groups()
-                logging.debug(f"Match for {key}: {self.matches[key]}")  # Log the matches for debugging purposes
+                matches[key] = match.groups()
+        return matches
 
-    def detect_intents(self):
-        """Detect intents from the input text."""
-        self.intents['long_term_storage'] = "long-term bicycle storage" in self.input_text
-        self.intents['short_term_storage'] = "short-term bicycle storage" in self.input_text
-        self.intents['shower_facilities'] = any(phrase in self.input_text.lower() for phrase in ["shower facilities", "shower", "shower facility"])
-        self.intents['preferred_spaces'] = any(phrase in self.input_text.lower() for phrase in ["preferred space", "preferred spaces", "required number of preferred spaces"])
-        self.intents['fueling_stations'] = any(phrase in self.input_text.lower() for phrase in ["fueling stations", "fuel stations", "required number of fueling stations"])
-        self.intents['restoration_area'] = any(phrase in self.input_text.lower() for phrase in ["percentage of restoration area", "restoration area percentage"])
-        self.intents['open_space'] = any(phrase in self.input_text.lower() for phrase in ["required open space", "open space requirement"])
-        self.intents['vegetated_space'] = "vegetated space" in self.input_text
-        self.intents['outdoor_area'] = any(phrase in self.input_text.lower() for phrase in ["required outdoor area", "outdoor area requirement", "outdoor area"])
-        self.intents['air_volume_before_occupancy'] = any(phrase in self.input_text.lower() for phrase in ["air volume before occupancy", "flush out before occupancy"])
-        self.intents['air_volume_during_occupancy'] = any(phrase in self.input_text.lower() for phrase in ["air volume during occupancy", "flush out during occupancy"])
-        self.intents['air_volume_to_complete'] = any(phrase in self.input_text.lower() for phrase in ["air volume to complete", "flush out to complete"])
-        self.intents['Runoff'] = any(phrase in self.input_text.lower() for phrase in ["runoff", "Expected runoff","run off"])
-        self.intents['Depression storage'] = "depression storage" in self.input_text.lower()
-        self.intents['development_percentage'] = any(phrase in self.input_text.lower() for phrase in ["previously developed land", "percentage of previously developed land"]) 
-        self.intents['bicycle_racks'] = any(phrase in self.input_text for phrase in ["number of bicycle racks required", "total of bicycle racks", "bicycle racks"])
-        self.intents['energy_performance'] = any(phrase in self.input_text for phrase in ["energy performance", "energy improvement"])
-        self.intents['r_value'] = any(phrase in self.input_text for phrase in ["r-value", "r value"])
-        self.intents['u_value'] = any(phrase in self.input_text for phrase in ["u-value", "u value"])
-        self.intents['shw'] = "hot water demand provided by shw" in self.input_text
-        self.intents['renewable_energy'] = "renewable energy" in self.input_text
-        self.intents['occupant_density'] = "occupant density" in self.input_text
-        self.intents['size_of_outdoor_space'] = "size of outdoor space" in self.input_text
-        self.intents['adhesives_sealants_intent'] = "compliant adhesives and sealants" in self.input_text
-        self.intents['waste_diverted_intent'] = "waste diverted from landfill" in self.input_text
-        self.intents['connectivity_index_intent'] = "connectivity index" in self.input_text
-        self.intents['intersection_density_intent'] = "intersection density" in self.input_text
-        self.intents['continuous_walkway_intent'] = any(phrase in self.input_text for phrase in ["continuous walkway", "cw"])
-        self.intents['far']=any(phrase in self.input_text.lower() for phrase in["floor area ratio","far"])
-        self.intents['seer']="seer" in self.input_text.lower()
-        self.intents['compliant_paints']=any(phrase in self.input_text.lower() for phrase in ["compliant paints and coating", "compliant paints and coatings"])
-        self.intents['dwelling_building_size'] = any(phrase in self.input_text for phrase in ["dwelling size","building size"])
+    def detect_intent(self,block):
+        """Detect intent from the block of text."""
+        intents = {}
+        if "long-term bicycle storage" in block:
+            intents['long_term_storage'] = True
+        if "short-term bicycle storage" in block:
+            intents['short_term_storage'] = True
+        if any(phrase in block for phrase in ["shower facilities", "shower", "shower facility"]):
+            intents['shower_facilities'] = True
+        if any(phrase in block for phrase in ["preferred space", "preferred spaces", "required number of preferred spaces"]):
+            intents['preferred_spaces'] = True
+        if any(phrase in block for phrase in ["fueling stations", "fuel stations", "required number of fueling stations"]):
+            intents['fueling_stations'] = True
+        if any(phrase in block for phrase in ["percentage of restoration area", "restoration area percentage"]):
+            intents['restoration_area'] = True
+        if any(phrase in block for phrase in ["required open space", "open space requirement"]):
+            intents['open_space'] = True
+        if "vegetated space" in block:
+            intents['vegetated_space'] = True
+        if any(phrase in block for phrase in ["required outdoor area", "outdoor area requirement", "outdoor area"]):
+            intents['outdoor_area'] = True
+        if any(phrase in block for phrase in ["air volume before occupancy", "flush out before occupancy"]):
+            intents['air_volume_before_occupancy'] = True
+        if any(phrase in block for phrase in ["air volume during occupancy", "flush out during occupancy"]):
+            intents['air_volume_during_occupancy'] = True
+        if any(phrase in block for phrase in ["air volume to complete", "flush out to complete"]):
+            self.intents['air_volume_to_complete'] = True
+        if any(phrase in block for phrase in ["runoff", "Expected runoff","run off"]):
+            intents['Runoff'] = True
+        if "depression storage" in block:
+            intents['Depression storage'] = True
+        if any(phrase in block for phrase in ["previously developed land", "percentage of previously developed land"]):
+            intents['development_percentage'] = True
+        if any(phrase in block for phrase in ["number of bicycle racks required", "total of bicycle racks", "bicycle racks"]):
+            intents['bicycle_racks'] = True
+        if any(phrase in block for phrase in ["energy performance", "energy improvement"]):
+            intents['energy_performance'] = True
+        if any(phrase in block for phrase in ["r-value", "r value"]):
+            intents['r_value'] = True
+        if "u-value" in block:
+            intents['u_value'] = True
+        if "hot water demand provided by shw" in block:
+            intents['shw'] = True
+        if "renewable energy" in block:
+            intents['renewable_energy'] = True
+        if "occupant density" in block:
+            intents['occupant_density'] = True
+        if "size of outdoor space" in block:
+            intents['size_of_outdoor_space'] = True
+        if "compliant adhesives and sealants" in block:
+            intents['adhesives_sealants_intent'] = True
+        if "waste diverted from landfill" in block:
+            intents['waste_diverted_intent'] = True
+        if "connectivity index" in block:
+            intents['connectivity_index_intent'] = True
+        if "intersection density" in block:
+            intents['intersection_density_intent'] = True
+        if any(phrase in block for phrase in ["continuous walkway", "cw"]):
+            intents['continuous_walkway_intent'] = True
+        if any(phrase in block for phrase in["floor area ratio","far"]):
+            intents['far']= True
+        if "seer" in block:
+            intents['seer']= True
+        if any(phrase in block for phrase in ["compliant paints and coating", "compliant paints and coatings"]):
+            intents['compliant_paints']= True
+        if any(phrase in block for phrase in ["dwelling size","building size"]):
+            intents['dwelling_building_size'] = True
+        return intents
         
-    def process_long_term_storage(self):
+    def process_block(self,block):
+        """Process a single block of text."""
+        intents = self.detect_intent(block)  # Reset intents for each block
+        matches = self.extract_data(block)  # Extract data for the intent
+
+        result = ""
+        if intents.get('long_term_storage'):
+            result = self.process_long_term_storage(matches)
+        elif intents.get('short_term_storage'):
+            result = self.process_short_term_storage(matches,intents)
+        elif intents.get('shower_facilities'):
+            result =  self.process_shower_facilities(matches)
+        elif intents.get('preferred_spaces'):
+            return self.process_preferred_spaces(matches)
+        elif intents.get('fueling_stations'):
+            return self.process_fueling_stations(matches)
+        elif intents.get('restoration_area'):
+            return self.process_restoration_area(matches)
+        elif intents.get('vegetated_space'):
+            return self.process_vegetated_space(matches)
+        elif intents.get('open_space'):
+            required_open_space = self.process_required_open_space(matches)
+            if required_open_space:
+                return f"Required open space ≥ {required_open_space}% of total site area"
+            else:
+                return "Invalid input for required open space please specify 'Total site area = <number>'."
+        elif intents.get('outdoor_area'):
+            return self.process_outdoor_area(matches)
+        elif intents.get('air_volume_before_occupancy'):
+            return self.process_air_volume_before_occupancy(matches)
+        elif intents.get('air_volume_during_occupancy'):
+            result = self.process_air_volume_during_occupancy(matches)
+        elif intents.get('air_volume_to_complete'):
+            result = self.process_air_volume_to_complete(matches)
+        elif intents.get('Runoff'):
+            result = self.process_runoff(matches)
+        elif intents.get('Depression storage'):
+            result = self.process_depression_storage(matches)
+        elif intents.get('development_percentage'):
+            result = self.process_development_percentage(matches)
+        elif intents.get('bicycle_racks'):
+            result = self.process_bicycle_racks(matches)
+        elif intents.get('energy_performance'):
+            result = self.process_energy_performance(matches)
+        elif intents.get('u_value'):
+            result = self.process_u_value(matches)
+        elif intents.get('r_value'):
+            result = self.process_r_value(matches)
+        elif intents.get('shw'):
+            result =  self.process_shw(matches)
+        elif intents.get('renewable_energy'):
+            result = self.process_renewable_energy(matches)
+        elif intents.get('occupant_density'):
+            result = self.process_occupant_density(matches)
+        elif  intents.get('size_of_outdoor_space'):
+            result = self.process_size_of_outdoor_space(matches)
+        elif intents.get('adhesives_sealants_intent'):
+            result = self. process_adhesives_sealants(matches)
+        elif intents.get('waste_diverted_intent'):
+            result =  self.process_waste_diverted(matches)
+        elif intents.get('connectivity_index_intent'):
+            result = self.process_connectivity_index(matches)
+        elif intents.get('intersection_density_intent'):
+            result = self.process_intersection_density(matches)
+        elif intents.get('continuous_walkway_intent'):
+            result = self.process_continuous_walkway(matches)
+        elif intents.get('far'):
+            result = self.process_Floor_Area_Ratio(matches)
+        elif intents.get('seer'):
+            result = self.process_seer(matches)
+        elif intents.get('compliant_paints'):
+            result = self.process_compliant_paints_coatings(matches)
+        elif intents.get('dwelling_building_size'):
+            result = self.process_dwelling_building_size(matches)
+        elif not any(char.isdigit() for char in matches):
+            result = "No valid number in the response"
+        
+        return result
+        
+    def split_and_process_input(self):
+        """Split the input text into blocks and process each one."""
+        blocks = re.split(r"(?i)\bcalculate\b|\n", self.input_text)  # Split by 'calculate' (case-insensitive)
+        for block in blocks:
+            block = block.strip()
+            if block:
+                result = self.process_block(f"calculate {block}" if "calculate" not in block.lower() else block)
+                if result:
+                    self.results.append(result)
+    
+        
+    def process_long_term_storage(self,matches):
         """Process long-term bicycle storage calculations."""
-        building_type_match = self.matches.get('building_type')
-        occupants_match = self.matches.get('occupants')
-        dwelling_units_match = self.matches.get('dwelling_units')
+        building_type_match = matches.get('building_type')
+        occupants_match = matches.get('occupants')
+        dwelling_units_match = matches.get('dwelling_units')
 
         if not building_type_match and (occupants_match or dwelling_units_match):
             return "Building type is required for long-term bicycle storage."
@@ -171,12 +296,12 @@ class BuildingDataProcessor:
             logging.error("Error processing long-term storage")
             return "Invalid input for occupants or dwelling units."
 
-    def process_short_term_storage(self):
+    def process_short_term_storage(self,matches,intents):
         """Process short-term bicycle storage calculations."""
-        peak_visitors_match = self.matches.get('peak_visitors')
-        area_match = self.matches.get('area')
-        length_width_match = self.matches.get('length_width')
-        area_unit_match = self.matches.get('area_with_unit') 
+        peak_visitors_match = matches.get('peak_visitors')
+        area_match = matches.get('area')
+        length_width_match = matches.get('length_width')
+        area_unit_match = matches.get('area_with_unit') 
         
         try:
             if peak_visitors_match:
@@ -189,15 +314,15 @@ class BuildingDataProcessor:
                 if not area_unit_match[1]:
                     return "Specify the unit for required calculation"
             # Call the area-based calculation function if area is provided
-                return self.process_short_term_storage_area()
+                return self.process_short_term_storage_area(matches)
                 
             elif length_width_match:
-                return self.process_short_term_storage_length_width()
+                return self.process_short_term_storage_length_width(matches)
             
-            elif self.intents.get('short_term_storage'):
-                if "area" in self.input_text or "length" in self.input_text or "width" in self.input_text:
+            elif intents.get('short_term_storage'):
+                if any(keyword in self.input_text for keyword in ["area", "length", "width"]):
                     return "Specify the unit for required calculation"
-                elif not "area" in self.input_text or not "length" in self.input_text or not "width" in self.input_text:
+                else:
                     return "Invalid input for peak visitors or area with unit or length and width with units"
             else:
                 raise ValueError("Invalid input for peak visitors or area with unit or length and width with units.")
@@ -205,9 +330,9 @@ class BuildingDataProcessor:
             logging.error(f"Error processing short-term storage: {e}")
             return str(e)  # Return the error message to the user
     
-    def process_preferred_spaces(self):
+    def process_preferred_spaces(self,matches):
         """Process the calculation of preferred parking spaces."""
-        preferred_spaces_match = self.matches.get('total_parking_space')
+        preferred_spaces_match = matches.get('total_parking_space')
         
         try:
             if preferred_spaces_match:
@@ -221,10 +346,10 @@ class BuildingDataProcessor:
             return "Invalid input for Total parking spaces."
 
             
-    def process_short_term_storage_area(self):
+    def process_short_term_storage_area(self,matches):
         """Process short-term bicycle storage calculations based on area."""
     # Extract area and unit together
-        area_unit_match = self.matches.get('area_with_unit')
+        area_unit_match = matches.get('area_with_unit')
 
         try:
             if area_unit_match:
@@ -253,9 +378,9 @@ class BuildingDataProcessor:
             return str(e)  # Return the error message to the user
 
             
-    def process_short_term_storage_length_width(self):
+    def process_short_term_storage_length_width(self,matches):
         """Process short-term bicycle storage calculations based on length and width."""
-        length_width_match = self.matches.get('length_width')
+        length_width_match = matches.get('length_width')
 
         try:
             if length_width_match:
@@ -297,9 +422,9 @@ class BuildingDataProcessor:
             return str(e)  # Return the error message to the user
 
    
-    def process_shower_facilities(self):
+    def process_shower_facilities(self,matches):
         """Process shower facilities."""
-        occupants_match = self.matches.get('occupants')
+        occupants_match = matches.get('occupants')
         try:
             if occupants_match:
                 regular_occupants = float(occupants_match[1])
@@ -317,9 +442,9 @@ class BuildingDataProcessor:
                 logging.error("Value error in shower facilities calculation.")
                 return "Invalid input for regular building occupants. Please specify a correct number."
             
-    def process_preferred_spaces(self):
+    def process_preferred_spaces(self,matches):
         """Process the calculation of preferred parking spaces."""
-        preferred_spaces_match = self.matches.get('total_parking_space')
+        preferred_spaces_match = matches.get('total_parking_space')
         
         try:
             if preferred_spaces_match:
@@ -332,9 +457,9 @@ class BuildingDataProcessor:
             logging.error("Value error in Total parking spaces calculation.")
             return "Invalid input for Total parking spaces."
             
-    def process_fueling_stations(self):
+    def process_fueling_stations(self,matches):
         """Process the calculation of fueling stations."""
-        fueling_stations_match = self.matches.get('total_parking_space')
+        fueling_stations_match = matches.get('total_parking_space')
 
         try:
             if fueling_stations_match:
@@ -347,10 +472,10 @@ class BuildingDataProcessor:
             logging.error("Value error in Total parking spaces calculation for fueling stations.")
             return "Invalid input for Total parking spaces."
     
-    def process_restoration_area(self):
+    def process_restoration_area(self,matches):
         """Process the calculation for percentage of restoration area."""
-        restoration_area_match = self.matches.get('restoration_area')
-        disturbed_area_match = self.matches.get('disturbed_area')
+        restoration_area_match = matches.get('restoration_area')
+        disturbed_area_match = matches.get('disturbed_area')
 
         try:
             if restoration_area_match and disturbed_area_match:
@@ -369,10 +494,10 @@ class BuildingDataProcessor:
             logging.error("Value error in restoration area calculation.")
             return "Invalid input for restoration area or previously disturbed site area."
 
-    def process_vegetated_space(self):
+    def process_vegetated_space(self,matches):
         """Process the calculation for vegetated space."""
     # Try to match required open space directly from the input
-        required_open_space_match = self.matches.get('required_open_space')
+        required_open_space_match = matches.get('required_open_space')
 
         try:
         # Case 1: If required open space is provided directly
@@ -380,7 +505,7 @@ class BuildingDataProcessor:
                 required_open_space = float(required_open_space_match[1])  # Extract required open space from match
             else:
             # Case 2: Calculate required open space based on the total site area
-                required_open_space = self.process_required_open_space()
+                required_open_space = self.process_required_open_space(matches)
 
             if required_open_space:
             # Calculate vegetated space as 25% of the required open space
@@ -393,9 +518,9 @@ class BuildingDataProcessor:
             logging.error("Value error in vegetated space calculation.")
             return "Invalid input for vegetated space."
 
-    def process_required_open_space(self):
+    def process_required_open_space(self,matches):
         """Process the calculation for required open space."""
-        total_site_area_match = self.matches.get('total_site_area')
+        total_site_area_match = matches.get('total_site_area')
     
         try:
             if total_site_area_match:
@@ -408,11 +533,11 @@ class BuildingDataProcessor:
             logging.error("Value error in total site area calculation.")
             return None  # Invalid input for total site area
             
-    def process_outdoor_area(self):
+    def process_outdoor_area(self,matches):
         """Process the calculation for required outdoor area."""
-        unit_match = self.matches.get('unit')
-        peak_inpatients_match = self.matches.get('peak_inpatients')
-        qualifying_outpatients_match = self.matches.get('qualifying_outpatients')
+        unit_match = matches.get('unit')
+        peak_inpatients_match = matches.get('peak_inpatients')
+        qualifying_outpatients_match =matches.get('qualifying_outpatients')
 
         try:
             # Check if any input is missing and return specific error message
@@ -454,10 +579,10 @@ class BuildingDataProcessor:
             logging.error("Value error in outdoor area calculation.")
             return "Invalid input for peak inpatients or qualifying outpatients. Please specify correct numbers."
             
-    def process_air_volume_before_occupancy(self):
+    def process_air_volume_before_occupancy(self,matches):
         """Process the calculation for air volume needed before occupancy."""
-        length_width_match = self.matches.get('length_widthh')
-        area_match = self.matches.get('area')
+        length_width_match = matches.get('length_widthh')
+        area_match = matches.get('area')
 
         try:
         # Case 1: Calculation based on length and width
@@ -507,10 +632,10 @@ class BuildingDataProcessor:
             logging.error("Value error in air volume calculation.")
             return "Invalid input for length, width, or area. Please specify correct numbers."
 
-    def process_air_volume_to_complete(self):
+    def process_air_volume_to_complete(self,matches):
         """Process the calculation for air volume needed during occupancy to complete."""
-        length_width_match = self.matches.get('length_widthh')
-        area_match = self.matches.get('area')
+        length_width_match = matches.get('length_widthh')
+        area_match = matches.get('area')
 
         try:
             if length_width_match:
@@ -561,10 +686,10 @@ class BuildingDataProcessor:
             logging.error("Value error in air volume calculation.")
             return "Invalid input for length, width, or area. Please specify correct numbers."
 
-    def process_air_volume_during_occupancy(self):
+    def process_air_volume_during_occupancy(self,matches):
         """Process the calculation for air volume needed during occupancy."""
-        length_width_match = self.matches.get('length_widthh')
-        area_match = self.matches.get('area')
+        length_width_match = matches.get('length_widthh')
+        area_match = matches.get('area')
 
         try:
             if length_width_match:
@@ -615,12 +740,12 @@ class BuildingDataProcessor:
             logging.error("Value error in air volume calculation.")
             return "Invalid input for length, width, or area. Please specify correct numbers."
 
-    def process_depression_storage(self):
+    def process_depression_storage(self,matches):
         """Process the calculation of depression storage using the provided formula."""
-        fmin_match = self.matches.get('fmin')
-        fmax_match = self.matches.get('fmax')
-        k_match = self.matches.get('k')
-        t_match = self.matches.get('t')
+        fmin_match = matches.get('fmin')
+        fmax_match = matches.get('fmax')
+        k_match = matches.get('k')
+        t_match = matches.get('t')
 
         try:
             # Ensure all necessary values are present for the calculation
@@ -654,16 +779,16 @@ class BuildingDataProcessor:
             logging.error("Value error in depression storage calculation.")
             return "Invalid input values for depression storage calculation. Please specify correct numbers for fmin, fmax, k, and t."
 
-    def process_runoff(self):
+    def process_runoff(self,matches):
         """Process the calculation for runoff, including the calculation of Depression storage if not provided."""
-        rainfall_match = self.matches.get('rainfall')
-        depression_storage_match = self.matches.get('depression_storage')
-        infiltration_match = self.matches.get('infiltration')
+        rainfall_match = matches.get('rainfall')
+        depression_storage_match = matches.get('depression_storage')
+        infiltration_match = matches.get('infiltration')
 
-        fmin_match = self.matches.get('fmin')
-        fmax_match = self.matches.get('fmax')
-        k_match = self.matches.get('k')
-        t_match = self.matches.get('t')
+        fmin_match = matches.get('fmin')
+        fmax_match = matches.get('fmax')
+        k_match = matches.get('k')
+        t_match = matches.get('t')
 
         try:
             if rainfall_match and infiltration_match:
@@ -724,10 +849,10 @@ class BuildingDataProcessor:
             logging.error("Value error in runoff calculation.")
             return "Invalid input values for runoff calculation. Please specify correct numbers for Rainfall, Depression Storage, and Infiltration."
 
-    def process_development_percentage(self):
+    def process_development_percentage(self,matches):
         """Process the calculation for percentage of development on previously developed land."""
-        previously_area_match = self.matches.get('previously_area')  # Area of previously developed land
-        development_footprint_match = self.matches.get('development_footprint')  # Area of development footprint
+        previously_area_match = matches.get('previously_area')  # Area of previously developed land
+        development_footprint_match = matches.get('development_footprint')  # Area of development footprint
 
         try:
             if previously_area_match and development_footprint_match:
@@ -758,12 +883,12 @@ class BuildingDataProcessor:
             logging.error("Value error in development percentage calculation.")
             return "Invalid input values for development percentage. Please specify correct numbers."
 
-    def process_bicycle_racks(self):
+    def process_bicycle_racks(self,matches):
         """Process the calculation for bicycle racks, both long-term and short-term."""
-        occupants_match = self.matches.get('occupants')
-        area_racks_match = self.matches.get('area_racks')
-        long_term_match = self.matches.get('long_term')
-        short_term_match = self.matches.get('short_term')
+        occupants_match = matches.get('occupants')
+        area_racks_match = matches.get('area_racks')
+        long_term_match = matches.get('long_term')
+        short_term_match = matches.get('short_term')
             # Condition 1: Long-term storage (default)
         if long_term_match or not short_term_match:
             if occupants_match:
@@ -785,10 +910,10 @@ class BuildingDataProcessor:
                     return "Invalid input for area. Please specify a correct number."
         return "Invalid input for bicycle racks. Please specify building occupants or area with the appropriate term (long-term or short-term)."
 
-    def process_energy_performance(self):
+    def process_energy_performance(self,matches):
         """Process the calculation for percentage improvement in energy consumption."""
-        baseline_energy_match = self.matches.get('baseline_energy')
-        proposed_energy_match = self.matches.get('proposed_energy')
+        baseline_energy_match = matches.get('baseline_energy')
+        proposed_energy_match = matches.get('proposed_energy')
 
         if baseline_energy_match and proposed_energy_match:
             try:
@@ -811,11 +936,11 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for Energy performance. Please specify baseline energy and proposed energy."
 
-    def process_u_value(self):
+    def process_u_value(self,matches):
         """Process the calculation for U-value."""
-        R_value_match = self.matches.get('R_value')
-        material_thickness_match = self.matches.get('material_thickness')
-        thermal_conductivity_match = self.matches.get('thermal_conductivity')
+        R_value_match = matches.get('R_value')
+        material_thickness_match = matches.get('material_thickness')
+        thermal_conductivity_match = matches.get('thermal_conductivity')
 
         if R_value_match:
             try:
@@ -853,10 +978,10 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for U-value calculation. Please specify either 'R-value' or both 'Material Thickness' and 'Thermal Conductivity'."
 
-    def process_r_value(self):
+    def process_r_value(self,matches):
         """Process the calculation for R-value."""
-        material_thickness_match = self.matches.get('material_thickness')
-        thermal_conductivity_match = self.matches.get('thermal_conductivity')
+        material_thickness_match = matches.get('material_thickness')
+        thermal_conductivity_match = matches.get('thermal_conductivity')
 
         if material_thickness_match and thermal_conductivity_match:
             try:
@@ -880,10 +1005,10 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for R-value calculation. Please specify both 'Material Thickness' and 'Thermal Conductivity'."
 
-    def process_shw(self):
+    def process_shw(self,matches):
         """Process the calculation for SHW (Solar Hot Water) percentage."""
-        shw_generated_match = self.matches.get('shw_generated')
-        hot_water_demand_match = self.matches.get('hot_water_demand')
+        shw_generated_match = matches.get('shw_generated')
+        hot_water_demand_match = matches.get('hot_water_demand')
 
         if shw_generated_match and hot_water_demand_match:
             try:
@@ -906,12 +1031,12 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for SHW calculation. Please specify both 'Annual hot water generated by SHW panels' and 'Annual hot water demand'."
 
-    def process_renewable_energy(self):
+    def process_renewable_energy(self,matches):
         """Process the calculation for Renewable Energy percentage."""
-        pv_energy_generated_match = self.matches.get('pv_energy_generated')
-        proposed_energy_consumption_match = self.matches.get('proposed_energy_consumption')
-        annual_energy_generated_match = self.matches.get('annual_energy_generated')
-        community_energy_consumed_match = self.matches.get('community_energy_consumed')
+        pv_energy_generated_match = matches.get('pv_energy_generated')
+        proposed_energy_consumption_match = matches.get('proposed_energy_consumption')
+        annual_energy_generated_match = matches.get('annual_energy_generated')
+        community_energy_consumed_match = matches.get('community_energy_consumed')
 
         if pv_energy_generated_match and proposed_energy_consumption_match:
             try:
@@ -952,12 +1077,12 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for Renewable Energy calculation. Please specify both 'Energy generated by PV' and 'Proposed building annual energy consumption', or both 'Annual energy generated' and 'Community energy consumption'."
 
-    def process_occupant_density(self):
+    def process_occupant_density(self,matches):
         """Process the calculation for occupant density."""
-        designed_occupancy_match = self.matches.get('designed_occupancy')
-        expected_occupancy_match = self.matches.get('expected_occupancy')
-        area_match = self.matches.get('areaa')
-        length_width_match = self.matches.get('length_width')
+        designed_occupancy_match = matches.get('designed_occupancy')
+        expected_occupancy_match = matches.get('expected_occupancy')
+        area_match = matches.get('areaa')
+        length_width_match = matches.get('length_width')
 
         # Check if either designed maximum occupancy or expected occupancy is provided
         occupancy = None
@@ -1009,9 +1134,9 @@ class BuildingDataProcessor:
         occupant_density = math.ceil(occupancy / area)
         return f"Occupant Density = {occupant_density} people per square meter"
 
-    def process_size_of_outdoor_space(self):
+    def process_size_of_outdoor_space(self,matches):
         """Process the calculation for the size of the outdoor space."""
-        total_occupancy_match = self.matches.get('total_occupancy')
+        total_occupancy_match = matches.get('total_occupancy')
         if total_occupancy_match:
             try:
                 total_occupancy = float(total_occupancy_match[0])
@@ -1022,7 +1147,7 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for occupant density. Please specify total occupancy = '<number>'."
 
-    def process_adhesives_sealants(self):
+    def process_adhesives_sealants(self,matches):
         """Process the calculation for compliant adhesives and sealants."""
         compliant_adhesives_match = re.search(self.patterns["compliant_adhesives"], self.input_text)
         total_adhesives_match = re.search(self.patterns["total_adhesives"], self.input_text)
@@ -1047,7 +1172,7 @@ class BuildingDataProcessor:
         else:
                 return "Invalid input for adhesives and sealants calculation. Please specify both 'Weight of adhesives and sealants not exceeding VOC limits' and 'Total weight'."
     
-    def process_waste_diverted(self):
+    def process_waste_diverted(self,matches):
         """Process the calculation for % Waste Diverted from Landfill."""
         recycled_match = re.search(self.patterns['recycled'], self.input_text)
         reused_match = re.search(self.patterns['reused'], self.input_text)
@@ -1089,7 +1214,7 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for waste diverted calculation. Please specify both 'Amount of waste recycled, reused, salvaged, donated, or reclaimed' and 'Total amount of waste generated'."
 
-    def process_connectivity_index(self):
+    def process_connectivity_index(self,matches):
         """Process the calculation for the Connectivity Index."""
         street_links_match = re.search(self.patterns['street_links'], self.input_text)
         nodes_match = re.search(self.patterns['nodes'], self.input_text)
@@ -1114,7 +1239,7 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for Connectivity Index calculation. Please specify both 'Street links = <number>' and 'Nodes = <number>'."
 
-    def process_intersection_density(self):
+    def process_intersection_density(self,matches):
         """Process the calculation for Intersection Density."""
         intersections_match = re.search(self.patterns['intersections'], self.input_text)
         area_match = re.search(self.patterns['area'], self.input_text)
@@ -1170,7 +1295,7 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for Intersection Density. Please specify 'Intersections = <number>'."
 
-    def process_continuous_walkway(self):
+    def process_continuous_walkway(self,matches):
         """Process the calculation for Continuous Walkway (CW)."""
         continuous_walkway_match = re.search(self.patterns['continuous_walkway_on_both'], self.input_text)
         all_walkways_match = re.search(self.patterns['all_walkways'], self.input_text)
@@ -1198,7 +1323,7 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for Continuous Walkway calculation. Please specify both 'Linear length on both sides' and 'All walkways'."
 
-    def process_Floor_Area_Ratio(self):
+    def process_Floor_Area_Ratio(self,matches):
         """ process the calculation for Floor Area Ratio (FAR)."""
         gfa_match = re.search(self.patterns['gfa'],self.input_text)
         site_area_match = re.search(self.patterns['site_area'],self.input_text)
@@ -1225,7 +1350,7 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for Floor Area Ratio.Please specify 'gross floor area' and 'total site area'."
 
-    def process_seer(self):
+    def process_seer(self,matches):
         """ process the calculation for SEER."""
         cooling_provided_match = re.search(self.patterns['cooling_provided'],self.input_text)
         energy_consumed_match =  re.search(self.patterns['energy_consumed'],self.input_text)
@@ -1252,7 +1377,7 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for SEER calculation. Please specify both 'Cooling provided' and 'Energy consumed'."
 
-    def process_compliant_paints_coatings(self):
+    def process_compliant_paints_coatings(self,matches):
         """ process the calculation for compliant paints and coatings."""
         compliant_paints_match=re.search(self.patterns['compliant_paints'],self.input_text)
         total_paints_match=re.search(self.patterns['total_paints'],self.input_text)
@@ -1278,12 +1403,12 @@ class BuildingDataProcessor:
         else:
             return "Invalid input for compliant paints and coatings. Please specify both 'Weight not exceeding VOC' and 'Total weight'."
 
-    def process_dwelling_building_size(self):
+    def process_dwelling_building_size(self,matches):
         """Process the calculation of Dwelling-Size of Private and Communal Outdoor Space."""
-        building_type_matchh = self.matches.get('building_typee')
-        occupants_match = self.matches.get('occupantss')
-        total_occupancy_match = self.matches.get('total_occupancy')
-        Dwelling_building_match = self.matches.get('Dwelling_building_size')
+        building_type_matchh = matches.get('building_typee')
+        occupants_match = matches.get('occupantss')
+        total_occupancy_match = matches.get('total_occupancy')
+        Dwelling_building_match = matches.get('Dwelling_building_size')
 
          # Add logging to debug extracted matches
         logging.debug(f"Building type: {building_type_matchh}")  # Log building type match
@@ -1338,80 +1463,7 @@ class BuildingDataProcessor:
         except ValueError:
             logging.error("Value error in Dwelling-Size of Private or Communal Outdoor Space calculation.")
             return "Invalid input for occupants or total occupancy. Please specify correct numbers."
-            
+    
     def process(self):
-        """Main method to process intents and return results."""
-        if self.intents.get('long_term_storage'):
-            return self.process_long_term_storage()
-        elif self.intents.get('short_term_storage'):
-            return self.process_short_term_storage()
-        elif self.intents.get('shower_facilities'):
-            return self.process_shower_facilities()
-        elif self.intents['preferred_spaces']:
-            return self.process_preferred_spaces()
-        elif self.intents['fueling_stations']:
-            return self.process_fueling_stations()
-        elif self.intents['restoration_area']:
-            return self.process_restoration_area()
-        elif self.intents['vegetated_space']:
-            return self.process_vegetated_space()
-        elif self.intents['open_space']:
-            required_open_space = self.process_required_open_space()
-            if required_open_space:
-                return f"Required open space ≥ {required_open_space}% of total site area"
-            else:
-                return "Invalid input for required open space please specify 'Total site area = <number>'."
-        elif self.intents['outdoor_area']:
-            return self.process_outdoor_area()
-        elif self.intents['air_volume_before_occupancy']:
-            return self.process_air_volume_before_occupancy()
-        elif self.intents['air_volume_during_occupancy']:
-            return self.process_air_volume_during_occupancy()
-        elif self.intents['air_volume_to_complete']:
-            return self.process_air_volume_to_complete()
-        elif self.intents['Runoff']:
-            return self.process_runoff()
-        elif self.intents['Depression storage']:
-            return self.process_depression_storage()
-        elif self.intents['development_percentage']:
-            return self.process_development_percentage()
-        elif self.intents['bicycle_racks']:
-            return self.process_bicycle_racks()
-        elif self.intents['energy_performance']:
-            return self.process_energy_performance()
-        elif self.intents['u_value']:
-            return self.process_u_value()
-        elif self.intents['r_value']:
-            return self.process_r_value()
-        elif self.intents['shw']:
-            return self.process_shw()
-        elif self.intents['renewable_energy']:
-            return self.process_renewable_energy()
-        elif self.intents['occupant_density']:
-            return self.process_occupant_density()
-        elif  self.intents['size_of_outdoor_space']:
-            return self.process_size_of_outdoor_space()
-        elif self.intents['adhesives_sealants_intent']:
-            return self. process_adhesives_sealants()
-        elif self.intents['waste_diverted_intent']:
-            return self.process_waste_diverted()
-        elif self.intents['connectivity_index_intent']:
-            return self.process_connectivity_index()
-        elif self.intents['intersection_density_intent']:
-            return self.process_intersection_density()
-        elif self.intents['continuous_walkway_intent']:
-            return self.process_continuous_walkway()
-        elif self.intents['far']:
-            return self.process_Floor_Area_Ratio()
-        elif self.intents['seer']:
-            return self.process_seer()
-        elif self.intents['compliant_paints']:
-            return self.process_compliant_paints_coatings()
-        elif self.intents['dwelling_building_size']:
-            return self.process_dwelling_building_size()
-        elif not any(char.isdigit() for char in self.input_text):
-            return "No valid number in the response"
-        # Add more processing for other intents...
-        return "No valid numerical data found for required calculation"
-        # Example response for debugging
-        return f"Processed input: {self.input_text}"
+        """Main method to return the combined results."""
+        return "\n".join(self.results)
