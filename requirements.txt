@@ -6,3 +6,4 @@ bcrypt
 pyyaml
 asyncio
 pandas
+openpyxl
